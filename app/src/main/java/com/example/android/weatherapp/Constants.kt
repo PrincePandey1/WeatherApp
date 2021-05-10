@@ -6,8 +6,21 @@ import android.net.NetworkCapabilities
 import android.net.NetworkInfo
 import android.os.Build
 import android.os.Build.*
+import com.example.android.weatherapp.models.WeatherResponse
+import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
 
 object Constants {
+
+    const val API_KEY = "48af9cd359d272d3a6bb39a8507dbf99"
+    const val BASE_URL = "http://api.openweathermap.org/data/"
+    const val METRIC_UNIT = "metric"
+
+
+
 
     fun isNetworkAvailable(context: Context): Boolean {
 

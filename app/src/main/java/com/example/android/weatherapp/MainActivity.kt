@@ -16,16 +16,26 @@ import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat.*
+import com.example.android.weatherapp.models.WeatherInterface
+import com.example.android.weatherapp.models.WeatherResponse
 import com.google.android.gms.location.*
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import okhttp3.internal.Internal.instance
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import www.sanju.motiontoast.MotionToast
+import www.sanju.motiontoast.MotionToast.Companion.TOAST_SUCCESS
 import www.sanju.motiontoast.MotionToast.Companion.darkToast
 
 class MainActivity : AppCompatActivity(){
+
 
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
 
@@ -95,7 +105,57 @@ class MainActivity : AppCompatActivity(){
 
             val longitude = mLastLocation.longitude
             Log.i("Current Longitude", "$longitude")
+            getLocationWeatherDetails(latitude, longitude)
+        }
+    }
 
+    private fun getLocationWeatherDetails(latitude: Double, longitude: Double){
+        if(Constants.isNetworkAvailable(this)){
+
+            val retrofit: Retrofit = Retrofit.Builder()
+                    .baseUrl(Constants.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+
+            val instanceService: WeatherInterface = retrofit.create(WeatherInterface::class.java)
+
+            val listCall: Call<WeatherResponse> = instanceService.getWeather(latitude,longitude,Constants.METRIC_UNIT,Constants.API_KEY)
+
+            listCall.enqueue(object: Callback<WeatherResponse>{
+
+                override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
+                  if(response.isSuccessful){
+                      val weatherList: WeatherResponse? = response.body()
+                      Log.i("Response Result", "$weatherList")
+                  }else{
+                      val rc = response.code()
+                              when(rc){
+                                  400 ->{
+                                      Log.e("Error 400" , "Bad Connection")
+                                  }
+                                  404 ->{
+                                      Log.e("Error 404" , " Not Found")
+                                  }else->{
+                                      Log.e("Error", " Error")
+                                  }
+                              }
+
+                  }
+                }
+
+
+                override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                      Log.e("Error" ,"Network Failure"  )
+                }
+
+            })
+
+        }else{
+            darkToast(this@MainActivity,"Error", "No  INTERNET CONNECTION available",
+                MotionToast.TOAST_ERROR,
+                MotionToast.GRAVITY_BOTTOM,
+                MotionToast.LONG_DURATION,
+                getFont(this@MainActivity,R.font.helvetica_regular))
         }
     }
 
@@ -132,12 +192,8 @@ class MainActivity : AppCompatActivity(){
             getSystemService(Context.LOCATION_SERVICE) as LocationManager
          return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                  || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-    }
+    }}
 
-
-    private fun darkToast(context: MultiplePermissionsListener, title: String, message: String, gravityBottom: Int, longDuration: Long, font: Typeface?) {}
-
-}
 
 
 
