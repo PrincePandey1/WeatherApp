@@ -24,6 +24,7 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -32,13 +33,15 @@ import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 import www.sanju.motiontoast.MotionToast
 import www.sanju.motiontoast.MotionToast.Companion.darkToast
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity(){
 
-    private var mcustom_diaLog: Dialog? = null
-    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+             private var mcustom_diaLog: Dialog? = null
+             private lateinit var mFusedLocationClient: FusedLocationProviderClient
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+        override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -122,7 +125,7 @@ class MainActivity : AppCompatActivity(){
 
             val listCall: Call<WeatherResponse> = service.getWeather(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
-            showDialogForPermission()
+           CustomDialogProgress()
 
             listCall.enqueue(object: Callback<WeatherResponse>{
 
@@ -132,6 +135,9 @@ class MainActivity : AppCompatActivity(){
                       hideProgressDialog()
 
                       val weatherList: WeatherResponse? = response.body()
+                      if (weatherList != null) {
+                          setupUI(weatherList )
+                      }
                       Log.i("Response" , "$weatherList" )
                   }else{
                       val rc = response.code()
@@ -195,7 +201,7 @@ class MainActivity : AppCompatActivity(){
   private fun isLocationEnabled(): Boolean{
 
         // This provides access to the system location services.
-        val locationManager: LocationManager =
+         val locationManager: LocationManager =
             getSystemService(Context.LOCATION_SERVICE) as LocationManager
          return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                  || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
@@ -215,6 +221,64 @@ class MainActivity : AppCompatActivity(){
         if(mcustom_diaLog != null){
             mcustom_diaLog!!.dismiss()
         }
+    }
+             private fun setupUI(weatherList: WeatherResponse){
+                for(i in weatherList.weather.indices)
+            {
+            Log.i("Weather",weatherList.weather.toString())
+            tv_main.text = weatherList.weather[i].main
+            tv_main_description.text = weatherList.weather[i].description
+            tv_temp.text = weatherList.main.temp.toString() + getUnit(application.resources.configuration.toString()) //have to add locales
+            tv_sunrise_time.text = unixTime(weatherList.sys.sunrise)
+            tv_sunset_time.text =  unixTime(weatherList.sys.sunset)
+            tv_country.text = weatherList.sys.country
+            tv_min.text = weatherList.main.temp_min.toString() + getMinTemp(application.resources.configuration.toString())
+            tv_max.text = weatherList.main.temp_max.toString() + getMaxTemp(application.resources.configuration.toString())
+            tv_humidity.text = weatherList.main.humidity.toString()
+                tv_speed.text = weatherList.wind.speed.toString()
+                tv_speed_unit.text = weatherList.wind.deg.toString() + getDegree(application.resources.configuration.toString())
+
+       }
+   }
+    private fun getUnit(value: String): String{
+        var value = "°C"
+
+        if("US" == value  || "LR" == value || "MM" == value){
+            value = "°F"
+        }
+        return value
+    }
+
+    private fun getMinTemp(value: String): String{
+        var value = "°C"
+
+        if("US" == value  || "LR" == value || "MM" == value){
+            value = "°F"
+        }
+        return value
+    }
+    private fun getMaxTemp(value: String): String{
+        var value = "°C"
+
+        if("US" == value  || "LR" == value || "MM" == value){
+            value = "°F"
+        }
+        return value
+    }
+
+    private fun getDegree(value: String): String{
+        var value = "°"
+
+        return value
+    }
+
+    private fun unixTime(timex: Long): String?{
+                                                                                     // we multiplied 1000l such that we get date in milliseconds
+        val date = Date(timex *1000L)                                          // we use Locale.UK such that we get time in 24 hr format val date = Date(timex *1000L)
+        val sdf = SimpleDateFormat("hh:mm" , Locale.UK)
+        sdf.timeZone = TimeZone.getDefault()
+        return  sdf.format(date)
+
     }
 }
 
