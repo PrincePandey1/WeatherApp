@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">WeatherApp</string>
+    <string name="work_in_progress">Work in Progress...</string>
+    <string name="please_wait">Please Wait....</string>
 </resources>
